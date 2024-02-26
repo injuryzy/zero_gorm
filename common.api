@@ -1,0 +1,235 @@
+syntax = "v1"
+
+//info(
+//    title: "generate"
+//    desc: "生成api"
+//    author: "injuryzy"
+//    email: "type email here"
+//    version: "version 1.0.0"
+//)
+
+type SenMessageReq struct {
+    Phone string `form:"phone"` // 手机号码
+}
+
+type UserLoginReq struct {
+    Phone string `json:"phone"`
+    SmsCode string `json:"smsCode"` // 短信验证码
+}
+
+// 后台管理系统登录
+type ManagerUserLoginReq struct {
+    Phone string `json:"phone"`
+    Password string `json:"password"`
+}
+
+
+// 后台管理系统登录
+type ManagerUserLoginResp struct {
+    Token string `json:"token"`             // 登录token
+    Status int64 `json:"status"`            // 1 hotel 2 警察 0后台管理系统
+    ReferToken string `json:"referToken"`   // 刷新token
+}
+
+type FileReq struct {
+    File string `form:"file"`   // 文件file
+    Status int `form:"status"`  // 1.申请文件
+}
+
+type FileResp struct {
+    FilePath []string `json:"filePath"`
+}
+
+type UserLoginResp struct {
+    Token string `json:"token"`             // 登录token
+    Status int64 `json:"status"`            // 1 hotel 2 警察
+    Pid int64 `json:"pid"`
+    ReferToken string `json:"referToken"`   // 刷新token
+}
+type ReferTokenReq struct {
+    ReferToken string `json:"referToken"`           // 登录token
+}
+
+
+type ScreenSearchReq struct {
+    HotelId int64 `form:"hotelId,optional"`
+    FloorId int64 `form:"floorId,optional"`
+}
+
+
+type ScreenHotel struct {
+    HotelId int64 `json:"hotel_id"`
+    FloorId int64 `json:"floor_id"`
+    Floor int `json:"floor"`
+    Name string `json:"name"`
+    LongitudeLatitude string `json:"longitude_latitude"`
+    Num int64 `json:"num"`
+    RegionPicture string `json:"region_picture"`
+    ScanNum int64 `json:"scanNum"`
+    CreatedAt string `json:"created_at"`
+}
+
+
+type ScreenHotelList struct {
+    ScreenHotel []ScreenHotel `json:"screen_hotel"`
+    DeviceNum int64 `json:"device_num"`
+    AlarmNum int64 `json:"alarm_num"`
+    DeviceTotal int64 `json:"device_total"`
+    ScanNum int64 `json:"scan_num"`
+}
+
+type SinglScreenHotel struct {
+    HotelId int64 `json:"hotel_id"`
+    HotelName string `json:"hotelName"`
+    Picture string `json:"picture"`
+    FloorId int64 `json:"floorId"`
+    RegionList []RegionResp `json:"regionList"`
+    DeviceNum int `json:"device_num"`
+    AlarmNum int64 `json:"alarm_num"`
+    DeviceTotal int `json:"device_total"`
+    ScanNum int64 `json:"scan_num"`
+}
+
+type RegionResp {
+    DeviceId int64 `json:"deviceId"`
+    RegionId int64 `json:"regionId"`
+    RegionName string `json:"regionName"`
+    Coordinate string `json:"coordinate"`
+    Attrbuit string `json:"attrbuit"`
+    Status int `json:"status"`
+    DeviceStatus int `json:"deviceStatus"`
+    RegionNum int64 `json:"regionNum"`
+}
+
+
+type Webhook struct {
+    Username string `json:"username"`
+    Timestamp int64 `json:"timestamp"`
+    //    Sockname string `json:"sockname"`
+    //    ReceiveMaximum int `json:"receive_maximum"`
+    ProtoVer int `json:"proto_ver"`
+    ProtoName string `json:"proto_name"`
+    Peername string `json:"peername"`
+    Node string `json:"node"`
+    //    Mountpoint string `json:"mountpoint"`
+    //    Keepalive int `json:"keepalive"`
+    //    IsBridge bool `json:"is_bridge"`
+    //    ExpiryInterval int `json:"expiry_interval"`
+    Event string `json:"event"`
+    //    ConnectedAt int64 `json:"connected_at"`
+    Clientid string `json:"clientid"`
+    //    CleanStart bool `json:"clean_start"`
+}
+
+type DeviceCount {
+    DeviceNum int `json:"deviceNum"`
+    Status int `json:"status"`
+}
+
+type MacCount {
+    MacNum int `json:"macNum"`
+    Status int `json:"status"`
+}
+
+type Merchantcout {
+    MerchantNum int `json:"merchantNum"`
+    Status int `json:"status"`
+}
+
+type MerChantPie {
+    MerchantNum int `json:"merchantNum"`
+    Province string `json:"province"`
+}
+
+type LineData {
+    Name string `json:"name"`
+    Handle int `json:"handle"` //处理
+    Forwar int `json:"forwar"` // 预警
+}
+
+type ManagerHomeResp struct {
+    Devices []DeviceCount `json:"devices"`
+    Mac []MacCount `json:"mac"`
+    Merchant []Merchantcout `json:"merchant"`
+    TodayMerchant []Merchantcout `json:"todayMerchant"`
+    Pies []MerChantPie `json:"pies"`
+    Lines []LineData `json:"lines"`
+}
+
+
+type DeletedScanLogs {
+    Phone string `form:"phone"`
+}
+
+@server(
+    group: user
+    middleware : OpterMiddleware
+    prefix : /v1
+)
+service YcApi {
+    @doc "发送验证码"
+    @handler sendVerificationCode
+    get /sendVerificationCode (SenMessageReq)
+
+    @doc "登录"
+    @handler userLogin
+    post /login (UserLoginReq) returns (UserLoginResp)
+
+    @doc "文件上传"
+    @handler uploadFile
+    post /upload (FileReq) returns (FileResp)
+
+    @doc "刷新token"
+    @handler referToken  // 请求头为refer-token
+    post /referToken (ReferTokenReq) returns (UserLoginResp)
+
+    @doc "日志统计"
+    @handler statistic  // 请求头为refer-token
+    get /statistic
+
+    @doc "后台管理系统登录"
+
+    @handler ManagerLogin
+    post /managerLogin (ManagerUserLoginReq) returns (ManagerUserLoginResp)
+
+
+    @doc "清空所有日志扫描"
+    @handler deleteScanLogs
+    get /deleteScanLogs (DeletedScanLogs)
+}
+@server(
+    group: user
+    prefix : /v1
+)
+service YcApi {
+    @doc "eqmx webhook"
+    @handler emqxWebhook
+    post /emqxWebhook (Webhook)
+}
+
+
+@server(
+    group : screen
+    prefix:/v1/screen
+    middleware : AuthorizeHandler,OpterMiddleware
+)
+
+service YcApi {
+    @doc "多酒店大屏首页"
+    @handler screenSearch
+    get /screenSearch (ScreenSearchReq) returns (ScreenHotelList)
+
+    @doc "单酒店大屏首页"
+    @handler SinglscreenSearch
+    get /singlScreenSearch (ScreenSearchReq) returns (SinglScreenHotel)
+
+    @doc "后台管理系统首页"
+    @handler managerHome
+    get /managerHome returns (ManagerHomeResp)
+
+    @doc "退出登录"
+    @handler LoginOut
+    get /loginOut
+}
+
+
